@@ -36,28 +36,12 @@ output_folder = os.path.join(base_dir, "Videos", "py_jack_downloads")
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 
-# it's better to ask from the user to provide the path
-input_file = "D:/todownload.txt"
-
-# Selecting mode of operation
-while True:
-    print("A >>> Search songs from the prompt")
-    print("B >>> Download songs in the todownload file")
-
-    mode = raw_input('Select Mode: A or B > ').lower()
-    if len(mode) > 1 or not (mode.startswith('a') or mode.startswith("b")):
-        print('Invalid mode, please try again')
-        continue
-    break
-
-
 # Getting youtube search term
 def get_search_term():
     while True:
-        inpt = raw_input('Enter search term >> ').lower()
+        inpt = raw_input('Enter search term\nor press <<Enter>> to change mode: > ').lower()
         if not inpt:
-            print('You didn\'t give us a thing, please try again')
-            continue
+            return main('b')
         srch_terms = inpt.split(' ')
         search = '+'.join(srch_terms)
         break
@@ -75,7 +59,6 @@ def download(url):
             # The loop is supposed to break when the above variable gets a value
             # If it doesn't break, it will continue to other resolutions and download
             # the last resolution it can meet.
-            
             break
         except Exception:
             # what is the point of this check ?
@@ -139,7 +122,7 @@ def get_video(soup):
                 # avoid '+' use string formatting instead
                 # fix pep 8 E501
                 dur = str(round(mins)) + " minutes, " + str(round(secs)) + " seconds"
-                print("Downloaded {0} in {1}".format(title, dur))
+                print("Downloaded %s in %.0f minutes, %.0f seconds" % (title,mins,secs))
             else:
                 print("Could not download the video")
         except Exception as e:
@@ -171,10 +154,26 @@ def downloader(term):
         except Exception as e:
             print(e)
             return
+        
+# Selecting mode of operation
+def select_mode():
+    while True:
+        print("A >>> Search songs from the prompt")
+        print("B >>> Download songs in the todownload file")
 
+        mode = raw_input('Select Mode: A or B > ').lower()
+        if len(mode) > 1 or not (mode.startswith('a') or mode.startswith("b")):
+            print('Invalid mode, please try again')
+            continue
+        break
+    return mode
 
 # Main function of the program
-def main(mode):
+def main(m=None):
+    if not m:
+        mode = select_mode()
+    else:
+        mode = m
     if(mode == 'a'):
         while True:
             downloader(get_search_term())
@@ -207,4 +206,4 @@ def main(mode):
         for item in files:
             downloader('+'.join(item.split(' ')))
 
-if __name__ == "__main__":main(mode)
+if __name__ == "__main__":main()
