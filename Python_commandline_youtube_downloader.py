@@ -29,9 +29,8 @@ except:
     sys.exit(0)
 
 # creating download folder
-# output_folder = 'D:/py_jack_downloads'
 base_dir = os.path.expanduser("~")
-output_folder = os.path.join(base_dir, "Videos", "py_jack_downloads")
+output_folder = os.path.join(base_dir, "Downloads", "py_cmd_utube_downloads")
 
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
