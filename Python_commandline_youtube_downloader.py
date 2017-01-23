@@ -1,5 +1,5 @@
 """
-Commandline_youtube_downloader (For osdows)
+Commandline_youtube_downloader
 ============================================
 Coded By: Jackson Kamya
 Email: jacksonkamya48@yahoo.com
@@ -10,7 +10,7 @@ Pre-Requirements:
 =====================
 Python 2.7
 BeautifulSoup: https://www.crummy.com/software/BeautifulSoup/bs4/download/
-pytube: https://pypi.python.org/pypi/pytube/ | https://sourceforge.net/projects/pytube/
+pytube: www.pypi.python.org/pypi/pytube/ | www.sourceforge.net/projects/pytube/
 
 Features:
 =========
@@ -111,8 +111,8 @@ def select_video(soup):
     while True:
         try:
             # fix pep 8 E501
-            selection = int(raw_input('Select from the above list or enter 0 to return to main menu >' )) 
-            if(selection > count or selection < 0):
+            selection = int(raw_input('Select from the above list or enter 0 to return to main menu >'))
+            if(selection >= count):
                 raise ValueError
             elif(selection == 0):
                 return main(mode)
@@ -151,7 +151,8 @@ def downloader(term):
     # Openning youtube search page
         try:
             url = 'https://www.youtube.com/results?search_query=' + term
-            html = urlopen(url).read()
+            with urlopen(url) as r:
+                html = r.read()
         except Exception as e:
             print(e)
             return
@@ -177,12 +178,12 @@ def main(mode):
         while True:
             downloader(get_search_term())
     else:
-        f = open(input_file, 'r')
-        try:
-            files = f.read().split('\n')
-        except Exception as e:
-            print(e)
-            return
+        with open(input_file, 'r') as f:
+            try:
+                files = f.readlines()
+            except Exception as e:
+                print(e)
+                return
         for item in files:
             downloader('+'.join(item.split(' ')))
 
