@@ -1,3 +1,6 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+
 """
 Commandline_youtube_downloader
 ============================================
@@ -12,13 +15,13 @@ pytube: www.pypi.python.org/pypi/pytube/ | www.sourceforge.net/projects/pytube/
 Features:
 =========
 1. Download videos one by one as searched at a prompt
-2. Download a list of songs as read line by line from file todownload.txt
+2. Download a list of songs as read line by line from txt file
 You are free to copy and modify this script for your own requirements.
 """
 
 import os
 import time
-from urllib2 import urlopen
+from urllib2 import urlopen, Request
 import sys
 
 try:
@@ -35,16 +38,18 @@ output_folder = os.path.join(base_dir, "Downloads", "py_cmd_utube_downloads")
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 
+
 # Getting youtube search term
 def get_search_term():
     while True:
+        # line is 92 char long pepify it
         inpt = raw_input('Enter search term\nor press <<Enter>> to change mode: > ').lower()
         if not inpt:
             return main('b')
-        srch_terms = inpt.split(' ')
-        search = '+'.join(srch_terms)
+        # search = inpt.replace(" ", "+")
+        # search = '+'.join(srch_terms)
         break
-    return search
+    return inpt.replace(" ", "+")
 
 
 # downloading the file
@@ -53,16 +58,8 @@ def download(url):
     for resol in accepted_resolutions:
         try:
             vid = YouTube(url).get('mp4', resol)
-            # what is the point of breaking this here ?
-            # taking the first resol which is 480p and exit ?
-            # The loop is supposed to break when the above variable gets a value
-            # If it doesn't break, it will continue to other resolutions and download
-            # the last resolution it can meet.
             break
         except Exception:
-            # what is the point of this check ?
-            # When the variable vid goes to resolutions lower than 360p,
-            # this check terminates the function to avoid downloading lower resolutions
             if resol not in accepted_resolutions:
                 print('No video matching any of the qualities required')
                 return False
@@ -92,8 +89,8 @@ def select_video(soup):
         print(str(count) + " >>> " + t)
     while True:
         try:
-            # fix pep 8 E501-what does this mean?
-            selection = int(raw_input('Select from the above list or enter 0 to return to main program >'))
+            # line 108 char ling pepify it
+            selection = int(raw_input('Select from the above list or enter 0 to return to main program > '))
             if(selection > count):
                 raise ValueError
             elif(selection == 0):
@@ -101,8 +98,8 @@ def select_video(soup):
             else:
                 return video_list[selection - 1]
         except ValueError:
-            # fix pep 8 E501
-            print('Input must be a number in between 1-{}, please try again'.format(count))
+            # line 92 char long pepify it
+            print('Input must be a number in between 1-{}, please try again '.format(count))
 
 
 # Getting the file
@@ -118,9 +115,7 @@ def get_video(soup):
                 end_time = time.time()
                 mins = (end_time - start_time) / 60
                 secs = (end_time - start_time) % 60
-                # avoid '+' use string formatting instead
-                # fix pep 8 E501
-                dur = str(round(mins)) + " minutes, " + str(round(secs)) + " seconds"
+                # line 88 char long pepify it
                 print("Downloaded %s in %.0f minutes, %.0f seconds" % (title,mins,secs))
             else:
                 print("Could not download the video")
@@ -132,10 +127,13 @@ def get_video(soup):
 def downloader(term):
     # Openning youtube search page
         try:
-            #An error was resulting from the changes you made here
-            url = 'https://www.youtube.com/results?search_query='+term
-            r = urlopen(url)
-            html = r.read()
+            agent = ("Mozilla/5.0 "
+                     "(X11; Ubuntu; Linux x86_64; rv:50.0) "
+                     "Gecko/20100101 Firefox/50.0")
+
+            url = 'https://www.youtube.com/results?search_query=' + term
+            req = Request(url, headers={'User-Agent': agent})
+            html = urlopen(req).read()
         except Exception as e:
             print(e)
             return
@@ -153,13 +151,14 @@ def downloader(term):
         except Exception as e:
             print(e)
             return
-        
-# Selecting mode of operation
-def select_mode():
-    while True:
-        print("A >>> Search songs from the prompt")
-        print("B >>> Download songs in the todownload file")
 
+
+# Selecting mode of operation
+def get_mode():
+    while True:
+        print("A >>> Search videos from the prompt")
+        print("B >>> Download videos from a file")
+        global mode
         mode = raw_input('Select Mode: A or B > ').lower()
         if len(mode) > 1 or not (mode.startswith('a') or mode.startswith("b")):
             print('Invalid mode, please try again')
@@ -167,29 +166,35 @@ def select_mode():
         break
     return mode
 
+
 # Main function of the program
+# passing None seems useless we can pass default mode
 def main(m=None):
     if not m:
-        mode = select_mode()
+        mode = get_mode()
     else:
         mode = m
     if(mode == 'a'):
         while True:
             downloader(get_search_term())
     else:
-        input_file = raw_input('Provide input file path e.g. D:/input.txt >')
+        input_file = raw_input('Provide input file path e.g. D:/input.txt > ')
         if not input_file:
-            print("No path provided, please try again")
+            print("Invalid path, please try again")
             return main(mode)
         else:
             if not os.path.exists(input_file):
                 print("File does not exist")
                 while True:
-                    print('A >>> switch mode\nB >>> Try again\nC >>> Quit program')
-                    choice = raw_input('Select one of the options above >').lower()
-                    if choice not in ('a','b','c'):
-                          print('Invalid choice, please try again')
-                          continue
+                    print("A >> switch mode")
+                    print("B >> Try again")
+                    print("C >> Quit program")
+
+                    choice = raw_input('Select one of the above options > ')
+                    if choice.lower() not in ('a', 'b', 'c'):
+                        print('Invalid choice, please try again')
+                        continue
+                    # can we make it more pythonic ?
                     if(choice == "a"):
                         return main('a')
                     elif(choice == 'b'):
@@ -203,6 +208,8 @@ def main(m=None):
                 print(e)
                 return
         for item in files:
-            downloader('+'.join(item.split(' ')))
+            downloader(item.replace(" ", "+"))
 
-if __name__ == "__main__":main()
+
+if __name__ == "__main__":
+    main()
