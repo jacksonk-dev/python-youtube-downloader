@@ -20,6 +20,7 @@ import os
 import time
 from urllib2 import urlopen
 import sys
+import re
 
 try:
     from bs4 import BeautifulSoup as bs
@@ -35,6 +36,7 @@ output_folder = os.path.join(base_dir, "Downloads", "py_cmd_utube_downloads")
 if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 
+downloaded_resol = ''
 # Getting youtube search term
 def get_search_term():
     while True:
@@ -46,27 +48,44 @@ def get_search_term():
         break
     return search
 
+def selected_resol_format(u_obj):
+    files = u_obj.videos
+    file_list = []
+    for f in files:
+        ext = f.extension
+        resol = f.resolution
+        file_list.append((ext,resol))
+    count = 0
+    print('='*50)
+    print('Available file formats and resolutions')
+    print('='*50)
+    for item in file_list:
+        count+=1
+        print("{} >>> {}-{}".format(count,item[0],item[1]))
 
+    while True:
+        try:
+            choice = int(raw_input("Select from the choices above or enter 0 to exit selection: >"))
+            if(choice == 0):
+                return main('a')
+            elif(choice > count or choice < 1):
+                print('Invalid choice, input must be a number in the range 1-{} please try again\n'.format(count))
+                continue
+            else:
+                break
+        except Exception as e:
+            print('Input must be a number in the range 0-{}, please try again'.format(count))          
+    return file_list[choice-1]
+    
 # downloading the file
 def download(url):
-    accepted_resolutions = ['480p', '720p', '360p']
-    for resol in accepted_resolutions:
-        try:
-            vid = YouTube(url).get('mp4', resol)
-            # what is the point of breaking this here ?
-            # taking the first resol which is 480p and exit ?
-            # The loop is supposed to break when the above variable gets a value
-            # If it doesn't break, it will continue to other resolutions and download
-            # the last resolution it can meet.
-            break
-        except Exception:
-            # what is the point of this check ?
-            # When the variable vid goes to resolutions lower than 360p,
-            # this check terminates the function to avoid downloading lower resolutions
-            if resol not in accepted_resolutions:
-                print('No video matching any of the qualities required')
-                return False
+    v = YouTube(url)
+    selection = selected_resol_format(v)
+    vid = v.get(selection[0], selection[1])
+    print('Downloading the video, you will be informed when its done, please hold on')
     vid.download(output_folder)
+    global downloaded_resol
+    downloaded_resol = selection[1]
     return True
 
 
@@ -92,7 +111,7 @@ def select_video(soup):
         print(str(count) + " >>> " + t)
     while True:
         try:
-            # fix pep 8 E501-what does this mean?
+            # fix pep 8 E501
             selection = int(raw_input('Select from the above list or enter 0 to return to main program >'))
             if(selection > count):
                 raise ValueError
@@ -102,7 +121,7 @@ def select_video(soup):
                 return video_list[selection - 1]
         except ValueError:
             # fix pep 8 E501
-            print('Input must be a number in between 1-{}, please try again'.format(count))
+            print('Input must be a number in the range 1-{}, please try again'.format(count))
 
 
 # Getting the file
@@ -111,7 +130,8 @@ def get_video(soup):
         title = File[1]
         link = File[0]
         vid_url = 'https://www.youtube.com' + link
-        print('Downloading ' + title)
+        print('\n\nSelected: ' + title)
+        print('Gathering available file formats and resolutions, please wait...')
         try:
             start_time = time.time()
             if download(vid_url):
@@ -121,7 +141,7 @@ def get_video(soup):
                 # avoid '+' use string formatting instead
                 # fix pep 8 E501
                 dur = str(round(mins)) + " minutes, " + str(round(secs)) + " seconds"
-                print("Downloaded %s in %.0f minutes, %.0f seconds" % (title,mins,secs))
+                print("Downloaded %s(Resolution: %s) in %.0f minutes, %.0f seconds" % (title,str(downloaded_resol),mins,secs))
             else:
                 print("Could not download the video")
         except Exception as e:
@@ -131,6 +151,7 @@ def get_video(soup):
 
 def downloader(term):
     # Openning youtube search page
+        print("Searching youtube, please wait..")
         try:
             #An error was resulting from the changes you made here
             url = 'https://www.youtube.com/results?search_query='+term
