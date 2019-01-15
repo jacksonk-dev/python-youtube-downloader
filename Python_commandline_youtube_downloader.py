@@ -2,7 +2,7 @@
 Commandline_youtube_downloader
 ============================================
 Coded By: Jackson Kamya
-Email: jacksonkamya48@yahoo.com
+Email: kamyaj89@gmail.com
 This script downloads Music from youtube
 Pre-Requirements:
 =====================
