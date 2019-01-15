@@ -18,9 +18,8 @@ You are free to copy and modify this script for your own requirements.
 
 import os
 import time
-from urllib2 import urlopen
+from urllib2 import urlopen, Request
 import sys
-import re
 
 try:
     from bs4 import BeautifulSoup as bs
@@ -37,16 +36,18 @@ if not os.path.exists(output_folder):
     os.mkdir(output_folder)
 
 downloaded_resol = ''
+
+
 # Getting youtube search term
 def get_search_term():
     while True:
-        inpt = raw_input('Enter search term\nor press <<Enter>> to change mode: > ').lower()
-        if not inpt:
+        inpt = raw_input('Enter search term\nor <<Enter>> to change mode: > ')
+        if not inpt.lower():
             return main('b')
-        srch_terms = inpt.split(' ')
-        search = '+'.join(srch_terms)
+        search = inpt.replace(" ", "+")
         break
     return search
+
 
 def selected_resol_format(u_obj):
     files = u_obj.videos
@@ -54,14 +55,14 @@ def selected_resol_format(u_obj):
     for f in files:
         ext = f.extension
         resol = f.resolution
-        file_list.append((ext,resol))
+        file_list.append((ext, resol))
     count = 0
-    print('='*50)
+    print('=' * 50)
     print('Available file formats and resolutions')
-    print('='*50)
+    print('=' * 50)
     for item in file_list:
-        count+=1
-        print("{} >>> {}-{}".format(count,item[0],item[1]))
+        count += 1
+        print("{} >>> {}-{}".format(count, item[0], item[1]))
 
     while True:
         try:
@@ -75,8 +76,9 @@ def selected_resol_format(u_obj):
                 break
         except Exception as e:
             print('Input must be a number in the range 0-{}, please try again'.format(count))          
-    return file_list[choice-1]
-    
+    return file_list[choice - 1]
+
+
 # downloading the file
 def download(url):
     v = YouTube(url)
@@ -138,10 +140,8 @@ def get_video(soup):
                 end_time = time.time()
                 mins = (end_time - start_time) / 60
                 secs = (end_time - start_time) % 60
-                # avoid '+' use string formatting instead
                 # fix pep 8 E501
-                dur = str(round(mins)) + " minutes, " + str(round(secs)) + " seconds"
-                print("Downloaded %s(Resolution: %s) in %.0f minutes, %.0f seconds" % (title,str(downloaded_resol),mins,secs))
+                print("Downloaded %s(Resolution: %s) in %.0f minutes, %.0f seconds" % (title, str(downloaded_resol), mins, secs))
             else:
                 print("Could not download the video")
         except Exception as e:
@@ -153,10 +153,15 @@ def downloader(term):
     # Openning youtube search page
         print("Searching youtube, please wait..")
         try:
-            #An error was resulting from the changes you made here
-            url = 'https://www.youtube.com/results?search_query='+term
-            r = urlopen(url)
-            html = r.read()
+            url = 'https://www.youtube.com/results?search_query=' + term
+            agent = ("Mozilla/5.0 "
+                     "(X11; Ubuntu; Linux x86_64; rv:50.0)"
+                     "Gecko/20100101 Firefox/50.0")
+
+            headers = {"User-Agent": agent}
+            r = Request(url, headers=headers)
+            html = urlopen(r).read()
+
         except Exception as e:
             print(e)
             return
@@ -174,13 +179,14 @@ def downloader(term):
         except Exception as e:
             print(e)
             return
-        
+
+
 # Selecting mode of operation
-def select_mode():
+def get_mode():
     while True:
         print("A >>> Search songs from the prompt")
         print("B >>> Download songs in the todownload file")
-
+        global mode
         mode = raw_input('Select Mode: A or B > ').lower()
         if len(mode) > 1 or not (mode.startswith('a') or mode.startswith("b")):
             print('Invalid mode, please try again')
@@ -188,10 +194,12 @@ def select_mode():
         break
     return mode
 
+
 # Main function of the program
+# None seems unobvious we may pass some default mode
 def main(m=None):
     if not m:
-        mode = select_mode()
+        mode = get_mode()
     else:
         mode = m
     if(mode == 'a'):
@@ -206,11 +214,13 @@ def main(m=None):
             if not os.path.exists(input_file):
                 print("File does not exist")
                 while True:
-                    print('A >>> switch mode\nB >>> Try again\nC >>> Quit program')
-                    choice = raw_input('Select one of the options above >').lower()
-                    if choice not in ('a','b','c'):
-                          print('Invalid choice, please try again')
-                          continue
+                    print('A >>> switch mode')
+                    print('B >>> Try again')
+                    print('C >>> Quit program')
+                    choice = raw_input('Select one of the options above >')
+                    if choice.lower() not in ('a', 'b', 'c'):
+                        print('Invalid choice, please try again')
+                        continue
                     if(choice == "a"):
                         return main('a')
                     elif(choice == 'b'):
@@ -223,7 +233,10 @@ def main(m=None):
             except Exception as e:
                 print(e)
                 return
-        for item in files:
-            downloader('+'.join(item.split(' ')))
 
-if __name__ == "__main__":main()
+        for item in files:
+            downloader(item.replace(" ", "+"))
+
+
+if __name__ == "__main__":
+    main()
